@@ -1,0 +1,8 @@
+{% extends 'basis.html' %}
+{% block title %}Add order{% endblock %}
+{% block content %}
+    <form method = "POST" action="{% url 'order' %}">
+        {{ order_add_form.as_p }}
+        <p><input type="submit" value="Send order"></p>
+    </form>
+{% endblock %}
