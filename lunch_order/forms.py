@@ -8,3 +8,8 @@ class OrderForm(forms.Form):
     comment = forms.CharField(max_length=300, required=False, label='Comment:')
     name = forms.CharField(max_length=100, required=True, label='Name:')
     email = forms.EmailField(required=True, label='E-mail:')
+
+
+# class OrderEditForm(forms.Form):
+#     dish = forms.CharField(required=True, max_length=100, label='Dish:')
+#     name = forms.CharField(max_length=100, required=True, label='Name:')

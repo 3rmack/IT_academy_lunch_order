@@ -1,0 +1,7 @@
+{% extends 'basis.html' %}
+{% block title %}Success{% endblock %}
+{% block content %}
+    <p>{{ message }}</p>
+    <p><a href="{% url 'order' %}">Order lunch</a></p>
+    <p><a href="{% url 'index' %}">Return to Main page</a></p>
+{% endblock %}

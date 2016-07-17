@@ -1,0 +1,18 @@
+{% extends 'basis.html' %}
+{% block title %}Order edit{% endblock %}
+{% block content %}
+    {% csrf_token %}
+    <form method = "POST" action="{% url 'edit' %}">
+        <p>
+            Что купить:
+            <input type="text" name="dish" value="{{ order_to_edit.dish }}">
+        </p>
+        <p>
+            Комментарий:
+            <input type="text" name="comment" value="{{ order_to_edit.comment }}">
+        </p>
+        <input type="hidden" name="id" value="{{ order_to_edit.id }}">
+        <p><input type="submit" value="Save"></p>
+    </form>
+    <p><a href="{% url 'admin_page' %}">Back</a> </p>
+{% endblock %}

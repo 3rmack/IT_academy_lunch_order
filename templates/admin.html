@@ -1,0 +1,38 @@
+{% extends 'basis.html' %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+    {% csrf_token %}
+    <table border="1">
+        <tr>
+            <td>Что купить</td>
+            <td>Кому</td>
+            <td>Оплачен BYN</td>
+            <td>Оплачен BYR</td>
+            <td>Комментарий</td>
+            <td colspan="2">Действия</td>
+        </tr>
+        {% for order in orders %}
+            <tr>
+                <td>{{ order.dish }}</td>
+                <td>{{ order.name }}</td>
+                {% if order.byn %}
+                    <td>{{ order.byn }}</td>
+                {% else %}
+                    <td></td>
+                {% endif %}
+                {% if order.byr %}
+                    <td>{{ order.byr }}</td>
+                {% else %}
+                    <td></td>
+                {% endif %}
+                <td>{{ order.comment }}</td>
+                <td><a href="{% url 'edit' %}/?id={{ order.id }}">Edit</a></td>
+                <td><a href="{% url 'delete' %}/?id={{ order.id }}">Delete</a></td>
+            </tr>
+        {% endfor %}
+    </table>
+    <p>Всего BYN: {{ total_byn }}</p>
+    <p>Всего BYR: {{ total_byr }}</p>
+    <p>Итого BYN: {{ total }}</p>
+    <p><a href="{% url 'index' %}">Main page</a></p>
+{% endblock %}
