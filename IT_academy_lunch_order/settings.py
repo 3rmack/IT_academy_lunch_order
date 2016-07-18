@@ -128,5 +128,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-EMAIL_FILE_PATH = 'C:\emails'  # TODO: path to email backend
-# EMAIL_FILE_PATH = os.path.join(BASE_DIR, '/emails')
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'emails')
+
+# LOGIN_REDIRECT_URL = '/admin_page/'

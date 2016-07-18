@@ -15,23 +15,56 @@ def index(request):
     return render(request, 'index.html')
 
 
-def send_email(recipient, order):
+def send_email(recipient, order, order_old=None):
     sender = User.objects.filter(is_superuser=True).first().email
+
+    if order_old:
+        if not order_old.byn:
+            order_old.byn = ''
+        if not order_old.byr:
+            order_old.byr = ''
+    if not order.byn:
+        order.byn = ''
+    if not order.byr:
+        order.byr = ''
+    body = u'Что купить: {0}\n' \
+           u'Кому: {1}\n' \
+           u'Оплачено BYN: {2}\n' \
+           u'Оплачено BYR: {3}\n' \
+           u'Комментарий: {4}'.format(order.dish, order.name, order.byn, order.byr, order.comment)
+    recipients = [order.email]
+
     if recipient == 'user':
-        subject = 'Your lunch order modified'
-        body = u'Что купить: {0}\nКомментарий: {1}'.format(order.dish, order.comment)
-        recipients = [order.email]
-        send_mail(subject, body, sender, recipients)
+        subject = u'Ваш заказ был изменен'
+        body = u'Старый заказ\n' \
+               u'Что купить: {0}\n' \
+               u'Кому: {1}\n' \
+               u'Оплачено BYN: {2}\n' \
+               u'Оплачено BYR: {3}\n' \
+               u'Комментарий: {4}\n' \
+               u'E-mail: {5}\n' \
+               u'\n' \
+               u'Новый заказ\n' \
+               u'Что купить: {6}\n' \
+               u'Кому: {7}\n' \
+               u'Оплачено BYN: {8}\n' \
+               u'Оплачено BYR: {9}\n' \
+               u'Комментарий: {10}\n' \
+               u'E-mail: {11}'.format(order_old.dish, order_old.name, order_old.byn, order_old.byr, order_old.comment, order_old.email,
+                                      order.dish, order.name, order.byn, order.byr, order.comment, order.email)
+
     elif recipient == 'admin':
-        subject = 'New lunch order'
-        body = u'Что купить: {0}\nКому: {1}\nКомментарий: {2}'.format(order.dish, order.name, order.comment)
+        subject = u'Новый заказ'
         recipients = [sender]
-        send_mail(subject, body, sender, recipients)
+    elif recipient == 'delete':
+        subject = u'Ваш заказ был удален'
+
+    send_mail(subject, body, sender, recipients)
 
 
 def check_time():
-    time_notify_admin = time(21, 00)
-    time_stop_work = time(23, 00)
+    time_notify_admin = time(13, 00)
+    time_stop_work = time(15, 00)
     time_now = timezone.localtime(timezone.now()).time()
     if time_now > time_stop_work:
         return 'stop'
@@ -51,10 +84,10 @@ def order(request):
             if check_time() == 'notify':
                 send_email('admin', order)
                 # print 'notify'
-            context = {'message': 'Your lunch order successfully added'}
+            context = {'message': u'Заказ успешно добавлен'}
             return render(request, 'order_success.html', context)
         else:
-            context = {'message': 'Lunch order failed. Looks like you input something not correct'}
+            context = {'message': u'Ощибка. Вы ввели неверные данные'}
             return render(request, 'order_success.html', context)
     else:
         order_f = OrderForm()
@@ -62,7 +95,7 @@ def order(request):
         disable_submit = False
 
         if check_time() == 'stop':
-            message = 'Order time expired. Your order will not be accepted.'
+            message = u'Время приема заказов истекло. Ваш заказ не будет принят.'
             disable_submit = True
             for field in order_f.fields:
                 order_f.fields[field].widget.attrs['disabled'] = True
@@ -71,7 +104,7 @@ def order(request):
         return render(request, 'order_add_form.html', context)
 
 
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/login/')
 def admin(request):
     orders = Orders.objects.filter()
     total_byn = 0
@@ -91,11 +124,25 @@ def admin(request):
 def edit_order(request):
     if request.method == 'POST':
         order_to_edit = request.POST
+        order_old = Orders.objects.get(id=order_to_edit['id'])
         order = Orders.objects.get(id=order_to_edit['id'])
         order.dish = order_to_edit['dish']
+        order.name = order_to_edit['name']
+
+        if order_to_edit['byn'] == '':
+            order.byn = None
+        else:
+            order.byn = order_to_edit['byn']
+
+        if order_to_edit['byr'] == '':
+            order_old.byr = None
+        else:
+            order.byr = order_to_edit['byr']
+
         order.comment = order_to_edit['comment']
+        order.email = order_to_edit['email']
         order.save()
-        send_email('user', order)
+        send_email('user', order, order_old=order_old)
         return render(request, 'edit_success.html', {'message': 'Edit success'})
     else:
         order_id = request.GET.get('id')
@@ -107,5 +154,7 @@ def edit_order(request):
 @login_required(login_url='/accounts/login/')
 def delete_order(request):
     order_to_delete_id = request.GET.get('id')
-    Orders.objects.get(id=order_to_delete_id).delete()
+    order = Orders.objects.get(id=order_to_delete_id)
+    send_email('delete', order)
+    order.delete()
     return render(request, 'edit_success.html', {'message': 'Order deleted'})

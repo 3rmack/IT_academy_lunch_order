@@ -6,9 +6,10 @@
         <tr>
             <td>Что купить</td>
             <td>Кому</td>
-            <td>Оплачен BYN</td>
-            <td>Оплачен BYR</td>
+            <td>Оплачено BYN</td>
+            <td>Оплачено BYR</td>
             <td>Комментарий</td>
+            <td>e-mail</td>
             <td colspan="2">Действия</td>
         </tr>
         {% for order in orders %}
@@ -26,6 +27,7 @@
                     <td></td>
                 {% endif %}
                 <td>{{ order.comment }}</td>
+                <td>{{ order.email }}</td>
                 <td><a href="{% url 'edit' %}/?id={{ order.id }}">Edit</a></td>
                 <td><a href="{% url 'delete' %}/?id={{ order.id }}">Delete</a></td>
             </tr>
@@ -35,4 +37,5 @@
     <p>Всего BYR: {{ total_byr }}</p>
     <p>Итого BYN: {{ total }}</p>
     <p><a href="{% url 'index' %}">Main page</a></p>
+    <p><a href="{% url 'logout' %}">Logout</a></p>
 {% endblock %}
