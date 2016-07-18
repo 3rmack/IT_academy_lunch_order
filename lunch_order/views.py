@@ -16,6 +16,7 @@ def index(request):
 
 
 def send_email(recipient, order, order_old=None):
+    subject = ''
     sender = User.objects.filter(is_superuser=True).first().email
 
     if order_old:
@@ -35,7 +36,7 @@ def send_email(recipient, order, order_old=None):
     recipients = [order.email]
 
     if recipient == 'user':
-        subject = u'Ваш заказ был изменен'
+        subject = 'Ваш заказ был изменен'
         body = u'Старый заказ\n' \
                u'Что купить: {0}\n' \
                u'Кому: {1}\n' \
@@ -158,3 +159,7 @@ def delete_order(request):
     send_email('delete', order)
     order.delete()
     return render(request, 'edit_success.html', {'message': 'Order deleted'})
+
+
+def logout_success(request):
+    return render(request, 'logout_success.html', {'message': 'Вы успешно вышли из системы'})
