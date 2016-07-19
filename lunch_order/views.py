@@ -65,8 +65,8 @@ def send_email(recipient, order, order_old=None):
 
 
 def check_time():
-    time_notify_admin = time(17, 00)
-    time_stop_work = time(18, 00)
+    time_notify_admin = time(13, 00)
+    time_stop_work = time(15, 00)
     time_now = timezone.localtime(timezone.now()).time()
     if time_now > time_stop_work:
         return 'stop'
