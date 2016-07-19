@@ -32,7 +32,8 @@ def send_email(recipient, order, order_old=None):
            u'Кому: {1}\n' \
            u'Оплачено BYN: {2}\n' \
            u'Оплачено BYR: {3}\n' \
-           u'Комментарий: {4}'.format(order.dish, order.name, order.byn, order.byr, order.comment)
+           u'Комментарий: {4}\n' \
+           u'E-mail: {5}'.format(order.dish, order.name, order.byn, order.byr, order.comment, order.email)
     recipients = [order.email]
 
     if recipient == 'user':
@@ -64,8 +65,8 @@ def send_email(recipient, order, order_old=None):
 
 
 def check_time():
-    time_notify_admin = time(13, 00)
-    time_stop_work = time(15, 00)
+    time_notify_admin = time(17, 00)
+    time_stop_work = time(18, 00)
     time_now = timezone.localtime(timezone.now()).time()
     if time_now > time_stop_work:
         return 'stop'
@@ -73,6 +74,18 @@ def check_time():
         return 'notify'
     else:
         return 'proceed'
+
+
+def count_total(orders):
+    total_byn = 0
+    total_byr = 0
+    for order in orders:
+        if order.byn:
+            total_byn += order.byn
+        if order.byr:
+            total_byr += order.byr
+    total = total_byn + float(total_byr) / 10000
+    return total, total_byn, total_byr
 
 
 @csrf_exempt
@@ -84,7 +97,6 @@ def order(request):
             order = Orders.objects.create(**data)
             if check_time() == 'notify':
                 send_email('admin', order)
-                # print 'notify'
             context = {'message': u'Заказ успешно добавлен'}
             return render(request, 'order_success.html', context)
         else:
@@ -107,58 +119,63 @@ def order(request):
 
 @login_required(login_url='/login/')
 def admin(request):
-    orders = Orders.objects.filter()
-    total_byn = 0
-    total_byr = 0
-    for order in orders:
-        if order.byn:
-            total_byn += order.byn
-        if order.byr:
-            total_byr += order.byr
-    total = total_byn + float(total_byr) / 10000
-    context = {'orders': orders, 'total_byr': total_byr, 'total_byn': total_byn, 'total': total}
-    return render(request, 'admin.html', context)
+    if request.user.is_superuser:
+        orders = Orders.objects.filter()
+
+        total, total_byn, total_byr = count_total(orders)
+
+        context = {'orders': orders, 'total_byr': total_byr, 'total_byn': total_byn, 'total': total}
+        return render(request, 'admin.html', context)
+    else:
+        return render(request, 'permissions_error.html', {'message': 'У вас нет прав для просмотра данной страницы'})
 
 
 @csrf_exempt
-@login_required(login_url='/accounts/login/')
+@login_required(login_url='/login/')
 def edit_order(request):
-    if request.method == 'POST':
-        order_to_edit = request.POST
-        order_old = Orders.objects.get(id=order_to_edit['id'])
-        order = Orders.objects.get(id=order_to_edit['id'])
-        order.dish = order_to_edit['dish']
-        order.name = order_to_edit['name']
+    if request.user.is_superuser:
+        if request.method == 'POST':
+            order_to_edit = request.POST
+            order_old = Orders.objects.get(id=order_to_edit['id'])
+            order = Orders.objects.get(id=order_to_edit['id'])
+            order.dish = order_to_edit['dish']
+            order.name = order_to_edit['name']
 
-        if order_to_edit['byn'] == '':
-            order.byn = None
+            if order_to_edit['byn'] == '':
+                order.byn = None
+            else:
+                order.byn = order_to_edit['byn']
+
+            if order_to_edit['byr'] == '':
+                order.byr = None
+            else:
+                order.byr = order_to_edit['byr']
+
+            order.comment = order_to_edit['comment']
+            order.email = order_to_edit['email']
+            order.save()
+            send_email('user', order, order_old=order_old)
+            return render(request, 'edit_success.html', {'message': 'Заказ успешно изменен'})
         else:
-            order.byn = order_to_edit['byn']
-
-        if order_to_edit['byr'] == '':
-            order_old.byr = None
-        else:
-            order.byr = order_to_edit['byr']
-
-        order.comment = order_to_edit['comment']
-        order.email = order_to_edit['email']
-        order.save()
-        send_email('user', order, order_old=order_old)
-        return render(request, 'edit_success.html', {'message': 'Edit success'})
+            order_id = request.GET.get('id')
+            order_to_edit = Orders.objects.get(id=order_id)
+            context = {'order_to_edit': order_to_edit}
+            return render(request, 'order_edit_form.html', context)
     else:
-        order_id = request.GET.get('id')
-        order_to_edit = Orders.objects.get(id=order_id)
-        context = {'order_to_edit': order_to_edit}
-        return render(request, 'order_edit_form.html', context)
+        return render(request, 'permissions_error.html', {'message': 'У вас нет прав для просмотра данной страницы'})
 
 
-@login_required(login_url='/accounts/login/')
+@csrf_exempt
+@login_required(login_url='/login/')
 def delete_order(request):
-    order_to_delete_id = request.GET.get('id')
-    order = Orders.objects.get(id=order_to_delete_id)
-    send_email('delete', order)
-    order.delete()
-    return render(request, 'edit_success.html', {'message': 'Order deleted'})
+    if request.user.is_superuser:
+        order_to_delete_id = request.GET.get('id')
+        order = Orders.objects.get(id=order_to_delete_id)
+        send_email('delete', order)
+        order.delete()
+        return render(request, 'edit_success.html', {'message': 'Заказ успешно удален'})
+    else:
+        return render(request, 'permissions_error.html', {'message': 'У вас нет прав для просмотра данной страницы'})
 
 
 def logout_success(request):

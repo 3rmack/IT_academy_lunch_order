@@ -1,8 +1,7 @@
 {% extends 'basis.html' %}
-{% block title %}Success{% endblock %}
+{% block title %}Изменение заказа{% endblock %}
 {% block content %}
     {% csrf_token %}
     <p>{{ message }}</p>
-    <p><a href="{% url 'admin_page' %}">Return to Admin page</a></p>
-{#    <p><a href="{% url 'index' %}">Return to Main page</a></p>#}
+    <p><a href="{% url 'admin_page' %}">Вернуться в админку</a></p>
 {% endblock %}

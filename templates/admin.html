@@ -1,5 +1,5 @@
 {% extends 'basis.html' %}
-{% block title %}Admin{% endblock %}
+{% block title %}Админка{% endblock %}
 {% block content %}
     {% csrf_token %}
     <table border="1">
@@ -28,14 +28,14 @@
                 {% endif %}
                 <td>{{ order.comment }}</td>
                 <td>{{ order.email }}</td>
-                <td><a href="{% url 'edit' %}/?id={{ order.id }}">Edit</a></td>
-                <td><a href="{% url 'delete' %}/?id={{ order.id }}">Delete</a></td>
+                <td><a href="{% url 'edit' %}/?id={{ order.id }}">Изменить</a></td>
+                <td><a href="{% url 'delete' %}/?id={{ order.id }}">Удалить</a></td>
             </tr>
         {% endfor %}
     </table>
     <p>Всего BYN: {{ total_byn }}</p>
     <p>Всего BYR: {{ total_byr }}</p>
     <p>Итого BYN: {{ total }}</p>
-    <p><a href="{% url 'index' %}">Main page</a></p>
-    <p><a href="{% url 'logout' %}">Logout</a></p>
+    <p><a href="{% url 'index' %}">Главная страница</a></p>
+    <p><a href="{% url 'logout' %}">Выйти из системы</a></p>
 {% endblock %}

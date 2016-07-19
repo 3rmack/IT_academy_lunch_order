@@ -1,7 +1,8 @@
 {% extends 'basis.html' %}
-{% block title %}Выход из системы{% endblock %}
+{% block title %}Ошибка{% endblock %}
 {% block content %}
     {% csrf_token %}
     <p>{{ message }}</p>
     <p><a href="{% url 'index' %}">Главная страница</a></p>
+    <p><a href="{% url 'logout' %}">Выйти из системы</a></p>
 {% endblock %}

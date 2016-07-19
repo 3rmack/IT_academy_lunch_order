@@ -1,14 +1,15 @@
 {% extends 'basis.html' %}
-{% block title %}Order{% endblock %}
+{% block title %}Сделать заказ{% endblock %}
 {% block content %}
     <p><font color="red">{{ message }}</font></p>
     <form method = "POST" action="{% url 'order' %}">
 {#        {% csrf_token %}#}
         {{ order_add_form.as_p }}
         {% if disable_submit %}
-            <p><input type="submit" value="Send order" disabled></p>
+            <p><input type="submit" value="Отправить заказ" disabled></p>
         {% else %}
-            <p><input type="submit" value="Send order"></p>
+            <p><input type="submit" value="Отправить заказ"></p>
         {% endif %}
     </form>
+    <p><a href="{% url 'index' %}">Главная страница</a></p>
 {% endblock %}
