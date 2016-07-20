@@ -11,14 +11,22 @@ from django.utils import timezone
 from datetime import time
 
 
-def index(request):
+def index(request):  # главная страница
     return render(request, 'index.html')
 
 
-def send_email(recipient, order, order_old=None):
-    subject = ''
-    sender = User.objects.filter(is_superuser=True).first().email
+def send_email(recipient, order, order_old=None):  # функция отправки email
+    # атрибут recipient отвечает за тип письма:
+    # user - пиьсмо об изменении заказа администратором
+    # admin - оповещение администратора о новом заказе с 13-00 до 15-00
+    # delete - оповещение пользователя о удалении его заказа администратором
 
+    subject = ''
+    sender = User.objects.filter(is_superuser=True).first().email  # отправитель - ящик первого superuser`а в базе
+    recipients = [order.email]
+
+    # преобразуем вывод оплаты для пользователя, т.к. в базе пустые значения хранятся как None
+    # подменяем None на пустую строку
     if order_old:
         if not order_old.byn:
             order_old.byn = ''
@@ -28,16 +36,16 @@ def send_email(recipient, order, order_old=None):
         order.byn = ''
     if not order.byr:
         order.byr = ''
+
     body = u'Что купить: {0}\n' \
            u'Кому: {1}\n' \
            u'Оплачено BYN: {2}\n' \
            u'Оплачено BYR: {3}\n' \
            u'Комментарий: {4}\n' \
            u'E-mail: {5}'.format(order.dish, order.name, order.byn, order.byr, order.comment, order.email)
-    recipients = [order.email]
 
     if recipient == 'user':
-        subject = 'Ваш заказ был изменен'
+        subject = u'Ваш заказ был изменен'
         body = u'Старый заказ\n' \
                u'Что купить: {0}\n' \
                u'Кому: {1}\n' \
@@ -54,7 +62,6 @@ def send_email(recipient, order, order_old=None):
                u'Комментарий: {10}\n' \
                u'E-mail: {11}'.format(order_old.dish, order_old.name, order_old.byn, order_old.byr, order_old.comment, order_old.email,
                                       order.dish, order.name, order.byn, order.byr, order.comment, order.email)
-
     elif recipient == 'admin':
         subject = u'Новый заказ'
         recipients = [sender]
@@ -64,10 +71,10 @@ def send_email(recipient, order, order_old=None):
     send_mail(subject, body, sender, recipients)
 
 
-def check_time():
-    time_notify_admin = time(13, 00)
-    time_stop_work = time(15, 00)
-    time_now = timezone.localtime(timezone.now()).time()
+def check_time():  # функция проверки времени, возвращает строку, которую обрабатывает функции обработки заказов
+    time_notify_admin = time(13, 00)  # время, с которого начинается оповещение администоратора о новых заказах
+    time_stop_work = time(15, 00)  # время окончания приема заказов
+    time_now = timezone.localtime(timezone.now()).time()  # время на момент заказа
     if time_now > time_stop_work:
         return 'stop'
     elif time_notify_admin < time_now < time_stop_work:
@@ -76,7 +83,7 @@ def check_time():
         return 'proceed'
 
 
-def count_total(orders):
+def count_total(orders):  # подсчет итоговых сумм
     total_byn = 0
     total_byr = 0
     for order in orders:
@@ -89,7 +96,7 @@ def count_total(orders):
 
 
 @csrf_exempt
-def order(request):
+def order(request):  # создание заказа
     if request.method == 'POST':
         raw_data = OrderForm(request.POST)
         if raw_data.is_valid():
@@ -109,7 +116,7 @@ def order(request):
 
         if check_time() == 'stop':
             message = u'Время приема заказов истекло. Ваш заказ не будет принят.'
-            disable_submit = True
+            disable_submit = True  # блокируем кнопку отправки заказа
             for field in order_f.fields:
                 order_f.fields[field].widget.attrs['disabled'] = True
 
@@ -118,7 +125,7 @@ def order(request):
 
 
 @login_required(login_url='/login/')
-def admin(request):
+def admin(request):  # админка
     if request.user.is_superuser:
         orders = Orders.objects.filter()
 
@@ -132,7 +139,7 @@ def admin(request):
 
 @csrf_exempt
 @login_required(login_url='/login/')
-def edit_order(request):
+def edit_order(request):  # изменение заказа
     if request.user.is_superuser:
         if request.method == 'POST':
             order_to_edit = request.POST
@@ -141,11 +148,12 @@ def edit_order(request):
             order.dish = order_to_edit['dish']
             order.name = order_to_edit['name']
 
+            # преобразуем вывод оплаты для записи в бау, т.к. в базе пустые значения хранятся как None
+            # подменяем пустую строку на None
             if order_to_edit['byn'] == '':
                 order.byn = None
             else:
                 order.byn = order_to_edit['byn']
-
             if order_to_edit['byr'] == '':
                 order.byr = None
             else:
@@ -167,7 +175,7 @@ def edit_order(request):
 
 @csrf_exempt
 @login_required(login_url='/login/')
-def delete_order(request):
+def delete_order(request):  # удаление заказа
     if request.user.is_superuser:
         order_to_delete_id = request.GET.get('id')
         order = Orders.objects.get(id=order_to_delete_id)
